@@ -1,0 +1,74 @@
+---
+- hosts: apps
+  become: true
+  vars:
+    container_count: 1
+    default_container_name: app-web-srv
+    default_container_image: nginx
+    default_container_command: sleep 1d
+
+  tasks:
+    - meta: refresh_inventory
+    - name: Install aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+        state: latest
+        update_cache: true
+
+    - name: add docker GPG apt key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: add docker repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: update apt and install docker-ce
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: true
+
+    - name: install docker module for python
+      pip:
+        name: docker
+
+    - name: add "ansible_ubuntu_demo" user to "docker" group
+      remote_user: ubuntu
+      user:
+        name: "ubuntu"
+        group: "docker"
+        append: yes
+      tags:
+        - docker
+    
+    - name: install docker compose
+      pip:
+        name: docker-compose
+
+    - name: clone app repo
+      git:
+       repo: https://github.com/Azure-Samples/azure-voting-app-redis.git
+       dest: /home/ubuntu/apps/
+       clone: yes
+       update: yes
+
+    - name: run docker compose
+      command: docker compose up -d
+      args:
+        chdir: /home/ubuntu/apps

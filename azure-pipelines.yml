@@ -1,0 +1,34 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool: SelfHosted
+
+steps:
+- task: TerraformInstaller@0
+  inputs:
+    terraformVersion: 'latest'
+- task: TerraformTaskV3@3
+  inputs:
+    provider: 'aws'
+    command: 'init'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/env/dev'
+    backendServiceAWS: 'aws_lab'
+    backendAWSBucketName: 'terraform-bucket-mack-us-east-1-goncalves'
+    backendAWSKey: 'tf/terraform.ftstate'
+- task: TerraformTaskV3@3
+  inputs:
+    provider: 'aws'
+    command: 'plan'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/env/dev'
+    environmentServiceNameAWS: 'aws_lab'
+- task: TerraformTaskV3@3
+  inputs:
+    provider: 'aws'
+    command: 'apply'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/env/dev'
+    environmentServiceNameAWS: 'aws_lab'
